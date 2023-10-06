@@ -1,6 +1,9 @@
 import os
+from fastapi.responses import StreamingResponse
 import uvicorn
 import traceback
+import time
+import json
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,19 +27,22 @@ valid_apikeys = ["R1NtQVIyMDIz", "UEVSU09OQUw="]
 keys = {"R1NtQVIyMDIz": "GTMART", "UEVSU09OQUw=": "PERSONAL"}
 
 
+def stream_data(url, apk, tbl_name):
+    supabase: Client = create_client(url, apk)
+    tbl = supabase.table(tbl_name).select("*").execute()
+    for item in tbl.data:
+        yield json.dumps(item)
+
+
 @app.get("/retrieve/{tbl_name}")
 def read_produtos(tbl_name: str, apikey: str):
     try:
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            supabase: Client = create_client(url, apk)
-            tbl = supabase.table(tbl_name).select("*").execute()
-            results = []
-            for item in tbl.data:
-                results.append(item)
-
-            return results
+            return StreamingResponse(
+                stream_data(url, apk, tbl_name), media_type="application/x-ndjson"
+            )
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
     except:
