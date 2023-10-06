@@ -40,9 +40,7 @@ def read_produtos(tbl_name: str, apikey: str):
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            return StreamingResponse(
-                stream_data(url, apk, tbl_name), media_type="application/x-ndjson"
-            )
+            return StreamingResponse(stream_data(url, apk, tbl_name))
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
     except:
