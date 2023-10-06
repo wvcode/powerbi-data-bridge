@@ -7,6 +7,7 @@ import json
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -22,16 +23,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware)
 
 valid_apikeys = ["R1NtQVIyMDIz", "UEVSU09OQUw="]
 keys = {"R1NtQVIyMDIz": "GTMART", "UEVSU09OQUw=": "PERSONAL"}
 
 
 def stream_data(url, apk, tbl_name):
+    resultados = []
     supabase: Client = create_client(url, apk)
     tbl = supabase.table(tbl_name).select("*").execute()
     for item in tbl.data:
-        yield json.dumps(item)
+        resultados.append(item)
+    return resultados
 
 
 @app.get("/retrieve/{tbl_name}")
@@ -40,7 +44,8 @@ def read_produtos(tbl_name: str, apikey: str):
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            return StreamingResponse(stream_data(url, apk, tbl_name))
+            dados = stream_data(url, apk, tbl_name)
+            return dados
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
     except:
