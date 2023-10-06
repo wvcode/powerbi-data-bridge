@@ -23,7 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# app.add_middleware(GZipMiddleware)
+app.add_middleware(GZipMiddleware)
 
 valid_apikeys = ["R1NtQVIyMDIz", "UEVSU09OQUw="]
 keys = {"R1NtQVIyMDIz": "GTMART", "UEVSU09OQUw=": "PERSONAL"}
@@ -33,6 +33,7 @@ def stream_data(url, apk, tbl_name):
     resultados = []
     supabase: Client = create_client(url, apk)
     tbl = supabase.table(tbl_name).select("*").execute()
+    i = 0
     for item in tbl.data:
         resultados.append(item)
     return resultados
