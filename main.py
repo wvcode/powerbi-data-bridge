@@ -46,7 +46,7 @@ def default():
 
 
 @app.get("/retrieve/{tbl_name}")
-def read_produtos(tbl_name: str, apikey: str):
+def read_data(tbl_name: str, apikey: str):
     try:
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
