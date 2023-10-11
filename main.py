@@ -39,6 +39,12 @@ def stream_data(url, apk, tbl_name):
     return resultados
 
 
+@app.get("/")
+def default():
+    result = "The API is UP!"
+    return result
+
+
 @app.get("/retrieve/{tbl_name}")
 def read_produtos(tbl_name: str, apikey: str):
     try:
