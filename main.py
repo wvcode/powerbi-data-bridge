@@ -28,15 +28,12 @@ keys = {"R1NtQVIyMDIz": "GTMART", "UEVSU09OQUw=": "PERSONAL"}
 
 
 def stream_data(url, apk, tbl_name, page, page_size):
-    resultados = []
     supabase: Client = create_client(url, apk)
 
     if page_size == 0:
         tbl = supabase.table(tbl_name).select("*").execute()
         records = tbl.data
     else:
-        stats = supabase.table(tbl_name + "_stats").select("*").execute()
-        print(stats.data)
         tbl = supabase.table(tbl_name).select("*").eq("page", page).execute()
         records = tbl.data
 
@@ -45,8 +42,6 @@ def stream_data(url, apk, tbl_name, page, page_size):
     else:
         return {
             "page": page,
-            "total_records": stats.data[0]["total"],
-            "total_pages": stats.data[0]["pages"] if page_size > 0 else 1,
             "records_on_this_page": len(records),
             "data": records,
         }
@@ -60,12 +55,11 @@ def default():
 
 @app.get("/retrieve_page/{tbl_name}")
 def read_data(tbl_name: str, apikey: str, page: int = 1):
-    page_size = 2
     try:
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            dados = stream_data(url, apk, tbl_name, page, page_size)
+            dados = stream_data(url, apk, tbl_name, page, 1)
             return dados
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
