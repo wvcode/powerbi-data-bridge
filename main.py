@@ -27,25 +27,26 @@ valid_apikeys = ["R1NtQVIyMDIz", "UEVSU09OQUw="]
 keys = {"R1NtQVIyMDIz": "GTMART", "UEVSU09OQUw=": "PERSONAL"}
 
 
-def stream_data(url, apk, tbl_name, page, page_size, order_column):
+def stream_data(url, apk, tbl_name, page, page_size):
     resultados = []
     supabase: Client = create_client(url, apk)
-    start = (page - 1) * page_size
 
     if page_size == 0:
         tbl = supabase.table(tbl_name).select("*").execute()
         records = tbl.data
     else:
-        tbl = supabase.table(tbl_name).select("*").order(order_column).execute()
-        records = tbl.data[start : (start + page_size)]
+        stats = supabase.table(tbl_name + "_stats").select("*").execute()
+        print(stats.data)
+        tbl = supabase.table(tbl_name).select("*").eq("page", page).execute()
+        records = tbl.data
 
     if page_size == 0:
         return records
     else:
         return {
             "page": page,
-            "total_records": len(tbl.data),
-            "total_pages": math.ceil(len(tbl.data) / page_size) if page_size > 0 else 1,
+            "total_records": stats.data[0]["total"],
+            "total_pages": stats.data[0]["pages"] if page_size > 0 else 1,
             "records_on_this_page": len(records),
             "data": records,
         }
@@ -58,13 +59,13 @@ def default():
 
 
 @app.get("/retrieve_page/{tbl_name}")
-def read_data(tbl_name: str, apikey: str, page: int = 1, order_column: str = "1"):
-    page_size = 100
+def read_data(tbl_name: str, apikey: str, page: int = 1):
+    page_size = 2
     try:
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            dados = stream_data(url, apk, tbl_name, page, page_size, order_column)
+            dados = stream_data(url, apk, tbl_name, page, page_size)
             return dados
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
@@ -79,7 +80,7 @@ def read_data(tbl_name: str, apikey: str):
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            dados = stream_data(url, apk, tbl_name, 1, 0, "1")
+            dados = stream_data(url, apk, tbl_name, 1, 0)
             return dados
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
