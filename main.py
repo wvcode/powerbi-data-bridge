@@ -23,21 +23,21 @@ app.add_middleware(
 )
 app.add_middleware(GZipMiddleware)
 
-valid_apikeys = ["R1NtQVIyMDIz", "UEVSU09OQUw="]
-keys = {"R1NtQVIyMDIz": "GTMART", "UEVSU09OQUw=": "PERSONAL"}
+valid_apikeys = eval(os.getenv("valid_apikeys"))
+keys = eval(os.getenv("keys"))
 
 
-def stream_data(url, apk, tbl_name, page, page_size):
+def stream_data(url, apk, tbl_name, page):
     supabase: Client = create_client(url, apk)
 
-    if page_size == 0:
+    if page == 0:
         tbl = supabase.table(tbl_name).select("*").execute()
         records = tbl.data
     else:
         tbl = supabase.table(tbl_name).select("*").eq("page", page).execute()
         records = tbl.data
 
-    if page_size == 0:
+    if page == 0:
         return records
     else:
         return {
@@ -59,7 +59,7 @@ def read_data(tbl_name: str, apikey: str, page: int = 1):
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            dados = stream_data(url, apk, tbl_name, page, 1)
+            dados = stream_data(url, apk, tbl_name, page)
             return dados
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
@@ -74,7 +74,7 @@ def read_data(tbl_name: str, apikey: str):
         if apikey in valid_apikeys:
             url = os.getenv(f"{keys[apikey]}_SUPABASE_URL")
             apk = os.getenv(f"{keys[apikey]}_SUPABASE_KEY")
-            dados = stream_data(url, apk, tbl_name, 1, 0)
+            dados = stream_data(url, apk, tbl_name, 0)
             return dados
         else:
             raise HTTPException(status_code=500, detail="Invalid APIKEY.")
